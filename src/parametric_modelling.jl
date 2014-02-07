@@ -1,6 +1,6 @@
 module parametric_modelling
 
-using linear_predictive_coding
+import linear_predictive_coding: levinson
 
 export aryule, arcov, armcov
  

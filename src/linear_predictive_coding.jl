@@ -1,6 +1,8 @@
 module linear_predictive_coding
 
-export levinson
+import parametric_modelling: aryule
+
+export levinson,lpc,rc,rc2lar,lar2rc,rc2is,is2rc
 
 # levinson: levinson durbin recursion
 # takes vector of autocorrelation coefficients 'R' and
@@ -25,15 +27,16 @@ end
 
 # lpc: compute linear prediction coefficients from signal 'x'
 # returns a 2-tuple of linear prediction coefficients, Gp^2 of the filter
-function lpc(x,L)
-   if length(x) < L
-        error("lpc: model order ($L) can't be more than length(x) ($(length(x))).")
-    end
-    R = xcorr(x,x)[length(x):]
-    levinson([R,0],L)[1:2]
+function lpc(x::Vector,L::Integer)
+    aryule(x,L)
 end
 
-function rc(x,L)
+function lpc(x::Matrix,L::Integer,dim::Integer)
+    aryule(x,L,dim)
+end
+
+
+function rc(x::Vector,L::Integer)
    if length(x) < L
         error("rc: model order ($L) can't be more than length(x) ($(length(x))).")
     end
@@ -41,20 +44,47 @@ function rc(x,L)
     levinson([R,0],L)[3]
 end
 
-function rc2lar(r::Number)
-    return log((1+r)/(1-r))
+function rc(x::Matrix,L::Integer,dim::Integer)
+    N,M = size(x)
+    if N==1 || M ==1 
+        return rc(vec(x),L)
+    end
+    if dim==1
+        refcoeff = zeros(L,M)
+        for i = 1:M
+            refcoeff[:,i] = rc(vec(x[:,i]),L)
+        end
+        return refcoeff
+    else
+        refcoeff = zeros(N,L)
+        for i = 1:N
+            refcoeff[i,:] = rc(vec(x[i,:]),L)
+        end
+        return refcoeff
+    end
 end
 
+rc2lar(r::Number) = log((1+r)/(1-r))
 @vectorize_1arg Number rc2lar
 
-function lar2rc(r::Number)
-    return (exp(r)-1)/(exp(r)+1)
-end
-
+lar2rc(r::Number) = (exp(r)-1)/(exp(r)+1)
 @vectorize_1arg Number lar2rc
 
+rc2is(r::Number) = (2/pi)*asin(r)
+@vectorize_1arg Number rc2is
 
+is2rc(r::Number) = sin(pi*r/2)
+@vectorize_1arg Number is2rc
 
+function ac2poly(R::Vector)
+    L = length(R)-1
+    levinson(R,L)[1]
+end
+
+function ac2rc(R::Vector)
+    L = length(R)-1
+    levinson(R,L)[3]
+end    
 
 
 
