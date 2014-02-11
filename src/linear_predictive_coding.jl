@@ -2,7 +2,7 @@ module linear_predictive_coding
 
 import parametric_modelling: levinson, aryule
 
-export lpc,rc,rc2lar,lar2rc,rc2is,is2rc
+export lpc,rc,rc2lar,lar2rc,rc2is,is2rc,ac2poly,ac2rc,rc2poly,rc2ac,poly2rc,poly2ac
 
 # lpc: compute linear prediction coefficients from signal 'x'
 # returns a 2-tuple of linear prediction coefficients, Gp^2 of the filter
