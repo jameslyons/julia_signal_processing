@@ -1,29 +1,8 @@
 module linear_predictive_coding
 
-import parametric_modelling: aryule
+import parametric_modelling: levinson, aryule
 
-export levinson,lpc,rc,rc2lar,lar2rc,rc2is,is2rc
-
-# levinson: levinson durbin recursion
-# takes vector of autocorrelation coefficients 'R' and
-# returns a 3-tuple of linear prediction coefficients, Gp^2 of the filter, 
-# and reflection coefficents
-function levinson(R::Vector,L::Integer)
-    a = zeros(L,L)
-    P = zeros(1,L)
- 
-    # for m = 1
-    a[1,1] = -R[2]/R[1]
-    P[1] = R[1]*(1-a[1,1]^2)
- 
-    # for m = 2,3,4,..L
-    for m = 2:L
-        a[m,m] = (-(R[m+1] + dot(vec(a[m-1,1:m-1]),R[m:-1:2]))/P[m-1])
-        a[m,1:m-1] = a[m-1,1:m-1]+a[m,m]*a[m-1,m-1:-1:1]
-        P[m] = P[m-1]*(1-a[m,m]^2)
-    end
-    [1., vec(a[L,:])], P[L], diag(a)
-end
+export lpc,rc,rc2lar,lar2rc,rc2is,is2rc
 
 # lpc: compute linear prediction coefficients from signal 'x'
 # returns a 2-tuple of linear prediction coefficients, Gp^2 of the filter
