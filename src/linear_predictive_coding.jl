@@ -86,7 +86,93 @@ function ac2rc(R::Vector)
     levinson(R,L)[3]
 end    
 
+#ref: s.kay, modern spectral estimation, 1988, Prentice Hall, p170-173
+function rc2poly(rc,R0=1)
+    a = diagm(rc)
+    L = length(rc)
+    Gp = R0*prod(1-abs2(rc))  
 
+    for m = 2:L
+        a[m,1:m-1] = a[m-1,1:m-1]+a[m,m]*conj(a[m-1,m-1:-1:1])
+    end
+    [1 a[L,:]], Gp
+end
+
+#ref: s.kay, modern spectral estimation, 1988, Prentice Hall, p170-173
+function rc2ac(rc,R0)
+    a = diagm(rc)
+    L = length(rc)
+    P = zeros(L)
+    P[1] = R0*(1-abs2(a[1,1]))
+    # build up matrix of predictor coefficents
+    for m = 2:L
+        a[m,1:m-1] = a[m-1,1:m-1]+a[m,m]*conj(a[m-1,m-1:-1:1])
+    end
+    for k = 2:L
+        P[k] = P[k-1]*(1-abs2(a[k,k]))
+    end
+    R = zeros(L) # AC coefficients, not including R0
+    R[1] = -a[1,1]*R0
+    for k = 2:L
+        s = 0
+        for l = 1:k-1
+            s+= a[k-1,l]*R[k-l]
+        end
+        R[k] = -s - a[k,k]*P[k-1]
+    end
+    
+    [R0, R]
+end
+
+#ref: s.kay, modern spectral estimation, 1988, Prentice Hall, p170-173
+function poly2rc(poly::Vector,efinal=0)
+    if poly[1] != 1
+        poly ./= poly[1]
+    end
+    L = length(poly)-1
+    a = zeros(L,L)
+    P = zeros(L)
+    P[L] = efinal
+    a[L,:] = poly[2:end]
+    for k = L:-1:2 
+        for i = 1:k-1
+            a[k-1,i] = (a[k,i] - a[k,k]*conj(a[k,k-i]))/(1-abs2(a[k,k]))
+        end
+        P[k-1] = P[k]/(1-abs2(a[k,k]))
+    end
+    R0 = P[1]/(1-abs2(a[1,1]))
+    diag(a),R0
+end
+
+#ref: s.kay, modern spectral estimation, 1988, Prentice Hall, p170-173
+function poly2ac(poly::Vector,efinal=0)
+    if poly[1] != 1
+        poly ./= poly[1]
+    end
+    L = length(poly)-1
+    a = zeros(L,L)
+    P = zeros(L)
+    P[L] = efinal
+    a[L,:] = poly[2:end]
+    for k = L:-1:2 
+        for i = 1:k-1
+            a[k-1,i] = (a[k,i] - a[k,k]*conj(a[k,k-i]))/(1-abs2(a[k,k]))
+        end
+        P[k-1] = P[k]/(1-abs2(a[k,k]))
+    end
+    R = zeros(L) # AC coefficients, not including R0
+    R0 = P[1]/(1-abs2(a[1,1]))
+    R[1] = -a[1,1]*R0
+    for k = 2:L
+        s = 0
+        for l = 1:k-1
+            s+= a[k-1,l]*R[k-l]
+        end
+        R[k] = -s - a[k,k]*P[k-1]
+    end
+    
+    [R0, R]
+end
 
 
 end # end module definition
