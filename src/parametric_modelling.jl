@@ -32,6 +32,38 @@ function aryule(x::Vector,L::Integer)
     levinson([R,0],L)[1:2]
 end
 
+function arburg(x::Vector,p::Integer)
+    N = length(x)
+
+    P = zeros(1,p+1)
+    f = zeros(p+1,N)
+    b = zeros(p+1,N)
+    a = zeros(p,p)
+
+    # Initialisation
+    f[1,:] = x
+    b[1,:] = x
+    P[1] = var(x)
+
+    for m = 1:p
+        numer,denom = 0,0
+        for n=0:N-m-1
+            numer += b[m,n+1]*f[m,n+2]
+            denom += f[m,n+2]^2 + b[m,n+1]^2
+        end
+        a[m,m] = -2*numer/denom
+        for i = 1:m-1
+            a[m,i] = a[m-1,i] + a[m,m]*a[m-1,m-i]
+        end
+        P[m+1] = P[m]*(1-a[m,m]^2)
+        for n=0:N-m-1
+            f[m+1,n+1] = f[m,n+2] + a[m,m]*b[m,n+1]
+            b[m+1,n+1] = b[m,n+1] + a[m,m]*f[m,n+2]
+        end
+    end
+    [1 a[p,:]], P[p]
+end
+
 function arcov(x::Vector,L::Integer)
     if length(x) < 2*L
         error("arcov: model order ($L) can't be more than length(x)/2 ($(length(x))/2).")
@@ -69,6 +101,7 @@ end
 aryule(x::Matrix,L::Integer,dim::Integer=1) = ar(aryule,x,L,dim)
 arcov(x::Matrix,L::Integer,dim::Integer=1) = ar(arcov,x,L,dim)
 armcov(x::Matrix,L::Integer,dim::Integer=1) = ar(armcov,x,L,dim)
+arburg(x::Matrix,L::Integer,dim::Integer=1) = ar(arburg,x,L,dim)
 
 # this allows the ar* functions to handle matrices by applying
 # the function 'method' along the specified dimension
